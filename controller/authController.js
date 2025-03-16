@@ -1,28 +1,31 @@
 const USERS = require('../models/userModel');
-const sendOtp=require('../utils/sendEmail')
+const sendOtp = require('../utils/sendEmail')
 const crypto = require('crypto');
-const bcrypt = require('bcrypt')
+const bcrypt = require('bcrypt');
 const signup = (req, res) => {
     const { firstName, lastName, email, mobileNumber, password } = req.body;
     try {
-        bcrypt.hash(password, parseInt(process.env.SALT_ROUNDS, function (err, hash) {
+        bcrypt.hash(password, parseInt(process.env.SALT_ROUNDS), function (err, hash) {
             if (err) {
-                console.log('Password is not hashed' + err);
+                console.log('Password is not hashed' + err)
 
             }
+
+
             USERS({
                 firstName: firstName,
                 lastName: lastName,
-                email: email,
+                email: null,
                 mobileNumber: mobileNumber,
                 password: hash
-            }).save().then((res) => [
-                res.status(200).json({ message: 'user details have been registered' })
-            ]).catch((err) => {
+            }).save().then((response) => {
+                res.status(200).json({ message: 'user details have been registered' });
+                console.log(response);
+                
+            }).catch((err) => {
                 console.log(err);
-
             })
-        }))
+        })
     } catch (error) {
         console.log(error);
 
@@ -32,23 +35,36 @@ const signup = (req, res) => {
 const generateOtp = async (req, res) => {
     const { email } = req.body;
     try {
-        const existingUser = await USERS.findOne({ email });
-        if (!existingUser) {
-            return res.status(400).json({ message: 'user is not found' })
-        }
+        // const existingUser = await USERS.findOne({ email });
+        // if (!existingUser) {
+        //     return res.status(400).json({ message: 'user is not found' })
+        // }
         const otp = crypto.randomInt(100000, 999999).toString();
+        console.log(otp);
+
         USERS.otp = otp;
         USERS.otpExpires = Date.now() + 10 * 60 * 1000;
-        sendOtp(email,otp)
+        await USERS.save()
+        sendOtp(email, otp);
+        res.status(200).json({ message: 'OTP has been sent to your entered Gmail account' })
     } catch (error) {
         console.log(error);
 
     }
 };
 
-const verifyOtp = () => [
+const verifyOtp = async (req, res) => {
 
-]
+    const { otp } = req.body;
+    if (otp != USERS.otp || USERS.otpExpires < Date.now()) {
+        return res.status(400).json({ message: 'OTP is not valid' })
+    }
+    USERS.otp = null;
+    USERS.otpExpires = null
+    await USERS.save()
+}
+
+
 
 const login = (req, res) => {
 

@@ -17,6 +17,7 @@ const sendOtp = async (mail, otp) => {
     };
     try {
         await transport.sendMail(mailOptions);
+        
         console.log('OTP has been sent successfully');
     } catch (error) {
         console.log(error);
@@ -24,4 +25,4 @@ const sendOtp = async (mail, otp) => {
     }
 };
 
-module.exports={sendOtp}
+module.exports = sendOtp
