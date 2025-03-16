@@ -3,7 +3,7 @@ const sendOtp = require('../utils/sendEmail')
 const crypto = require('crypto');
 const bcrypt = require('bcrypt');
 const signup = (req, res) => {
-    const { firstName, lastName, email, mobileNumber, password } = req.body;
+    const { firstName, lastName, mobileNumber, password } = req.body;
     try {
         bcrypt.hash(password, parseInt(process.env.SALT_ROUNDS), function (err, hash) {
             if (err) {
@@ -15,7 +15,6 @@ const signup = (req, res) => {
             USERS({
                 firstName: firstName,
                 lastName: lastName,
-                email: null,
                 mobileNumber: mobileNumber,
                 password: hash
             }).save().then((response) => {
@@ -33,18 +32,20 @@ const signup = (req, res) => {
 };
 
 const generateOtp = async (req, res) => {
-    const { email } = req.body;
+    const { mobileNumber,email } = req.body;
     try {
         // const existingUser = await USERS.findOne({ email });
         // if (!existingUser) {
         //     return res.status(400).json({ message: 'user is not found' })
         // }
+
+        const currentUser= await USERS.findOne({mobileNumber});
         const otp = crypto.randomInt(100000, 999999).toString();
         console.log(otp);
 
-        USERS.otp = otp;
-        USERS.otpExpires = Date.now() + 10 * 60 * 1000;
-        await USERS.save()
+        currentUser.otp = otp;
+        currentUser.otpExpires = Date.now() + 10 * 60 * 1000;
+        await currentUser.save()
         sendOtp(email, otp);
         res.status(200).json({ message: 'OTP has been sent to your entered Gmail account' })
     } catch (error) {
@@ -54,14 +55,26 @@ const generateOtp = async (req, res) => {
 };
 
 const verifyOtp = async (req, res) => {
-
-    const { otp } = req.body;
-    if (otp != USERS.otp || USERS.otpExpires < Date.now()) {
+  try {
+    const {email, mobileNumber,otp } = req.body;
+    const currentUser= await USERS.findOne({mobileNumber});
+    console.log(currentUser);
+    
+   
+    if (otp != currentUser.otp || currentUser.otpExpires < Date.now()) {
         return res.status(400).json({ message: 'OTP is not valid' })
     }
-    USERS.otp = null;
-    USERS.otpExpires = null
-    await USERS.save()
+    console.log('hitted');
+    
+    currentUser.otp = null;
+    currentUser.otpExpires = null;
+    currentUser.email=email;
+    await currentUser.save();
+   return res.status(200).json({message:"You have been signed up successfully"})
+  } catch (error) {
+    console.log(error);
+    
+  }
 }
 
 
