@@ -1,9 +1,9 @@
 var express = require('express');
+const upload = require('../middleware/upload');
+const { createPost, giveLike } = require('../controller/userController');
 var router = express.Router();
 
-/* GET users listing. */
-router.get('/', function(req, res, next) {
-  res.send('respond with a resource');
-});
+router.post('/create_posts',upload, createPost );
+router.post('/give_like', giveLike );
 
 module.exports = router;
