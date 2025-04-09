@@ -1,9 +1,15 @@
 const mongoose = require('mongoose');
 
 const CommentSchema = mongoose.Schema({
+    postId: {
+        type: mongoose.Types.ObjectId,
+        ref: 'img_posts',
+        required:true
+    },
     user: {
         type: mongoose.Types.ObjectId,
-        ref: 'users'
+        ref: 'users',
+        required:true
     },
     comment: {
         type: String,
@@ -11,7 +17,7 @@ const CommentSchema = mongoose.Schema({
     },
     createdOn: {
         type: Date,
-        default: new Date 
+        default: Date.now
     }
 });
 const comments = mongoose.model('comments', CommentSchema);

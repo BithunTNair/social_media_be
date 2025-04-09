@@ -7,7 +7,7 @@ const postSchema = mongoose.Schema({
         required:true,
         index:true
     },
-    img: {
+    post: {
         type: String,
     },
     caption: {
@@ -22,16 +22,16 @@ const postSchema = mongoose.Schema({
     likes: [{
         type: mongoose.Types.ObjectId,
         ref: 'users',
-        unique:true
+        //unique:true
     }],
     likesCount: {
         type: Number,
         default: 0
     },
-    comment:{
-        type:mongoose.Types.ObjectId,
-        ref:'comments'
-    }
+    // comment:{
+    //     type:mongoose.Types.ObjectId,
+    //     ref:'comments'
+    // }
 });
 
 const imgPosts = mongoose.model('img_posts', postSchema);
