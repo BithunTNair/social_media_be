@@ -16,9 +16,7 @@ const userSchema = mongoose.Schema({
     },
     password: {
         type: String,
-        required: true,
-        min: 4,
-        max: 8
+        // required: true
     },
     mobileNumber: {
         type: String,
@@ -27,7 +25,6 @@ const userSchema = mongoose.Schema({
     },
     otp: {
         type: String,
-
     },
     otpExpires: {
         type: Date
@@ -40,7 +37,7 @@ const userSchema = mongoose.Schema({
     },
     createdOn: {
         type: Date,
-        default: new Date()
+        default: Date.now
     },
     active: {
         type: Boolean,

@@ -16,6 +16,9 @@ const authRouter = require('./routes/auth');
 const paymentRouter = require('./routes/payment');
 database()
 var app = express();
+ app.use(cors({
+  origin:'http://localhost:5173'
+ }))
 
 // view engine setup
 app.set('views', path.join(__dirname, 'views'));

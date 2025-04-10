@@ -3,44 +3,42 @@ const sendOtp = require('../utils/sendEmail')
 const crypto = require('crypto');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken')
-const signup = (req, res) => {
-    const { firstName, lastName, mobileNumber, password } = req.body;
+const register = (req, res) => {
+    const { firstName, lastName,email, mobileNumber } = req.body;
     try {
-        bcrypt.hash(password, parseInt(process.env.SALT_ROUNDS), function (err, hash) {
-            if (err) {
-                console.log('Password is not hashed' + err)
+     const user=   USERS({
+            firstName: firstName,
+            lastName: lastName,
+            email:email,
+            mobileNumber: mobileNumber,
+        }).save().then((response) => {
+           res.status(200).json({ message: 'user details have been registered' });
+            console.log(response);
 
+        }).catch((err) => {
+            console.log(err);
+            if(err.code===11000  && err.errmsg.includes('mobileNumber') ){
+                return  res.status(400).json({ message: 'This mobile number is already exist' });
+            }else if(err.code===11000  && err.errmsg.includes('email') ){
+                return  res.status(405).json({ message: 'This email is exist' });
             }
-
-
-            USERS({
-                firstName: firstName,
-                lastName: lastName,
-                mobileNumber: mobileNumber,
-                password: hash
-            }).save().then((response) => {
-                res.status(200).json({ message: 'user details have been registered' });
-                console.log(response);
-
-            }).catch((err) => {
-                console.log(err);
-            })
+            return  res.status(500).json({ message: 'something went wrong' });
         })
     } catch (error) {
         console.log(error);
-
+        return  res.status(500).json({ message: 'something went wrong' });
     }
 };
 
 const generateOtp = async (req, res) => {
     const { mobileNumber, email } = req.body;
     try {
-        // const existingUser = await USERS.findOne({ email });
-        // if (!existingUser) {
-        //     return res.status(400).json({ message: 'user is not found' })
-        // }
+        const existingUser = await USERS.findOne({ email });
+        if (!existingUser) {
+            return res.status(400).json({ message: 'user is not found' })
+        }
 
-        const currentUser = await USERS.findOne({ mobileNumber });
+        // const currentUser = await USERS.findOne({ mobileNumber });
         const otp = crypto.randomInt(100000, 999999).toString();
         console.log(otp);
 
@@ -57,7 +55,7 @@ const generateOtp = async (req, res) => {
 
 const verifyOtp = async (req, res) => {
     try {
-        const { email, mobileNumber, otp } = req.body;
+        const { email, mobileNumber, otp ,password} = req.body;
         const currentUser = await USERS.findOne({ mobileNumber });
         console.log(currentUser);
 
@@ -66,15 +64,50 @@ const verifyOtp = async (req, res) => {
             return res.status(400).json({ message: 'OTP is not valid' })
         }
         console.log('hitted');
+        bcrypt.hash(password, parseInt(process.env.SALT_ROUNDS), function (err, hash) {
+            if (err) {
+                console.log('Password is not hashed' + err)
+
+            }
+            currentUser.password= hash;
+            currentUser.save();
+        })
 
         currentUser.otp = null;
         currentUser.otpExpires = null;
         currentUser.email = email;
+       
         await currentUser.save();
         return res.status(200).json({ message: "You have been signed up successfully" })
     } catch (error) {
         console.log(error);
 
+    }
+};
+
+const setPassword= (req,res)=>{
+    const {password}=req.body;
+    try {
+        bcrypt.hash(password, parseInt(process.env.SALT_ROUNDS), function (err, hash) {
+            if (err) {
+                console.log('Password is not hashed' + err)
+
+            }
+
+
+            USERS({
+                password: hash
+            }).save().then((response) => {
+                res.status(200).json({ message: 'user details have been registered' });
+                console.log(response);
+
+            }).catch((err) => {
+                console.log(err);
+            })
+        })
+    } catch (error) {
+        console.log(error);
+        
     }
 }
 
@@ -109,4 +142,4 @@ const login = async (req, res) => {
     }
 };
 
-module.exports = { signup, login, generateOtp, verifyOtp }
+module.exports = { register, login, generateOtp, verifyOtp }
