@@ -4,29 +4,29 @@ const crypto = require('crypto');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken')
 const register = (req, res) => {
-    const { firstName, lastName,email, mobileNumber } = req.body;
+    const { firstName, lastName, email, mobileNumber } = req.body;
     try {
-     const user=   USERS({
+        const user = USERS({
             firstName: firstName,
             lastName: lastName,
-            email:email,
+            email: email,
             mobileNumber: mobileNumber,
         }).save().then((response) => {
-           res.status(200).json({ message: 'user details have been registered' });
+            res.status(200).json({ message: 'user details have been registered' });
             console.log(response);
 
         }).catch((err) => {
             console.log(err);
-            if(err.code===11000  && err.errmsg.includes('mobileNumber') ){
-                return  res.status(400).json({ message: 'This mobile number is already exist' });
-            }else if(err.code===11000  && err.errmsg.includes('email') ){
-                return  res.status(405).json({ message: 'This email is exist' });
+            if (err.code === 11000 && err.errmsg.includes('mobileNumber')) {
+                return res.status(400).json({ message: 'This mobile number is already exist' });
+            } else if (err.code === 11000 && err.errmsg.includes('email')) {
+                return res.status(405).json({ message: 'This email is exist' });
             }
-            return  res.status(500).json({ message: 'something went wrong' });
+            return res.status(500).json({ message: 'something went wrong' });
         })
     } catch (error) {
         console.log(error);
-        return  res.status(500).json({ message: 'something went wrong' });
+        return res.status(500).json({ message: 'something went wrong' });
     }
 };
 
@@ -42,10 +42,11 @@ const generateOtp = async (req, res) => {
         const otp = crypto.randomInt(100000, 999999).toString();
         console.log(otp);
 
-        currentUser.otp = otp;
-        currentUser.otpExpires = Date.now() + 10 * 60 * 1000;
-        await currentUser.save()
+        existingUser.otp = otp;
+        existingUser.otpExpires = Date.now() + 10 * 60 * 1000;
+        await existingUser.save()
         sendOtp(email, otp);
+        passingEmail(email)
         return res.status(200).json({ message: 'OTP has been sent to your entered Gmail account' })
     } catch (error) {
         console.log(error);
@@ -55,8 +56,11 @@ const generateOtp = async (req, res) => {
 
 const verifyOtp = async (req, res) => {
     try {
-        const { email, mobileNumber, otp ,password} = req.body;
-        const currentUser = await USERS.findOne({ mobileNumber });
+        const { otp } = req.body;
+       function passingEmail(email){
+        var userEmail=email
+       }
+        const currentUser = await USERS.findOne({ email });
         console.log(currentUser);
 
 
@@ -69,24 +73,24 @@ const verifyOtp = async (req, res) => {
                 console.log('Password is not hashed' + err)
 
             }
-            currentUser.password= hash;
+            currentUser.password = hash;
             currentUser.save();
         })
 
         currentUser.otp = null;
         currentUser.otpExpires = null;
         currentUser.email = email;
-       
+
         await currentUser.save();
-        return res.status(200).json({ message: "You have been signed up successfully" })
+        return res.status(200).json({ message: "You have been signed up successfully" },userEmail)
     } catch (error) {
         console.log(error);
 
     }
 };
 
-const setPassword= (req,res)=>{
-    const {password}=req.body;
+const setPassword = (req, res) => {
+    const { password } = req.body;
     try {
         bcrypt.hash(password, parseInt(process.env.SALT_ROUNDS), function (err, hash) {
             if (err) {
@@ -107,7 +111,7 @@ const setPassword= (req,res)=>{
         })
     } catch (error) {
         console.log(error);
-        
+
     }
 }
 
@@ -128,8 +132,8 @@ const login = async (req, res) => {
                 };
                 const token = jwt.sign({ ...user }, process.env.SECRET_KEY, options);
                 // console.log(token);
-                
-                return  res.status(200).json({ user: user })
+
+                return res.status(200).json({ user: user })
             } else if (err) {
                 return res.status(401).json({ message: 'Invalid Credentials' })
             }
