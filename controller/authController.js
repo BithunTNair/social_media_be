@@ -46,7 +46,6 @@ const generateOtp = async (req, res) => {
         existingUser.otpExpires = Date.now() + 10 * 60 * 1000;
         await existingUser.save()
         sendOtp(email, otp);
-        passingEmail(email)
         return res.status(200).json({ message: 'OTP has been sent to your entered Gmail account' })
     } catch (error) {
         console.log(error);
@@ -57,10 +56,7 @@ const generateOtp = async (req, res) => {
 const verifyOtp = async (req, res) => {
     try {
         const { otp } = req.body;
-       function passingEmail(email){
-        var userEmail=email
-       }
-        const currentUser = await USERS.findOne({ email });
+        const currentUser = await USERS.findOne({ otp });
         console.log(currentUser);
 
 
@@ -68,28 +64,26 @@ const verifyOtp = async (req, res) => {
             return res.status(400).json({ message: 'OTP is not valid' })
         }
         console.log('hitted');
-        bcrypt.hash(password, parseInt(process.env.SALT_ROUNDS), function (err, hash) {
-            if (err) {
-                console.log('Password is not hashed' + err)
+        // bcrypt.hash(password, parseInt(process.env.SALT_ROUNDS), function (err, hash) {
+        //     if (err) {
+        //         console.log('Password is not hashed' + err)
 
-            }
-            currentUser.password = hash;
-            currentUser.save();
-        })
+        //     }
+        //     currentUser.password = hash;
+        //     currentUser.save();
+        // })
 
         currentUser.otp = null;
         currentUser.otpExpires = null;
-        currentUser.email = email;
-
         await currentUser.save();
-        return res.status(200).json({ message: "You have been signed up successfully" },userEmail)
+        return res.status(200).json({ message: "OTP verification successfull" })
     } catch (error) {
         console.log(error);
 
     }
 };
 
-const setPassword = (req, res) => {
+const createPassword = (req, res) => {
     const { password } = req.body;
     try {
         bcrypt.hash(password, parseInt(process.env.SALT_ROUNDS), function (err, hash) {
@@ -146,4 +140,4 @@ const login = async (req, res) => {
     }
 };
 
-module.exports = { register, login, generateOtp, verifyOtp }
+module.exports = { register, login, generateOtp, verifyOtp, createPassword }
