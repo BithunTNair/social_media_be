@@ -12,7 +12,7 @@ const register = (req, res) => {
             email: email,
             mobileNumber: mobileNumber,
         }).save().then((response) => {
-            res.status(200).json({ message: 'user details have been registered' });
+            res.status(200).json({ message: 'user details have been registered', registered_user: response });
             console.log(response);
 
         }).catch((err) => {
@@ -83,28 +83,27 @@ const verifyOtp = async (req, res) => {
     }
 };
 
-const createPassword = (req, res) => {
+const createPassword = async (req, res) => {
+    const { id } = req.params.id
     const { password } = req.body;
     try {
-        bcrypt.hash(password, parseInt(process.env.SALT_ROUNDS), function (err, hash) {
+      const currentUser=  await USERS.findOne({ id });
+      console.log(currentUser);
+      
+        bcrypt.hash(password, parseInt(process.env.SALT_ROUNDS), async function (err, hash) {
             if (err) {
                 console.log('Password is not hashed' + err)
 
             }
 
 
-            USERS({
-                password: hash
-            }).save().then((response) => {
-                res.status(200).json({ message: 'user details have been registered' });
-                console.log(response);
-
-            }).catch((err) => {
-                console.log(err);
-            })
+          currentUser.password= hash
+          await currentUser.save();
+         return res.status(200).json({message:'user signedup successfully'})
         })
     } catch (error) {
         console.log(error);
+        return res.status(500).json({message:'something went wrong'})
 
     }
 }
